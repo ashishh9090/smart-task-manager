@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.title }} — Smart Task Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-start mb-4 gap-3 border-bottom pb-4">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <span class="rounded-circle" style="width: 16px; height: 16px; background-color: {{ project.color }};"></span>
+            <h2 class="fw-bold mb-0">{{ project.title }}</h2>
+            <span class="badge {% if project.status == 'active' %}bg-success-subtle text-success{% else %}bg-secondary-subtle text-secondary{% endif %} text-capitalize">
+                {{ project.status }}
+            </span>
+            <span class="badge bg-light text-dark border">Your Role: <strong>{{ user_role|title }}</strong></span>
+        </div>
+        <p class="text-muted mb-0">{{ project.description|default:"No description provided." }}</p>
+    </div>
+
+    <div class="d-flex gap-2">
+        <a href="{% url 'tasks:kanban' %}?project={{ project.id }}" class="btn btn-outline-primary d-flex align-items-center gap-1 shadow-sm">
+            <i class="bi bi-kanban"></i> Kanban Board
+        </a>
+        <a href="{% url 'tasks:create' %}?project={{ project.id }}" class="btn btn-primary d-flex align-items-center gap-1 shadow-sm">
+            <i class="bi bi-plus-lg"></i> Add Task
+        </a>
+        {% if can_edit %}
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-gear"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                    <li><a class="dropdown-item" href="{% url 'projects:edit' project.pk %}"><i class="bi bi-pencil me-2"></i> Edit Project</a></li>
+                    <li><a class="dropdown-item" href="{% url 'projects:archive_toggle' project.pk %}"><i class="bi bi-archive me-2"></i> {% if project.status == 'archived' %}Unarchive{% else %}Archive{% endif %}</a></li>
+                    {% if project.owner == user or user.is_superuser %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="{% url 'projects:delete' project.pk %}"><i class="bi bi-trash me-2"></i> Delete Project</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Project Metrics -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card stat-card p-3">
+            <span class="text-muted small fw-semibold">Total Tasks</span>
+            <h3 class="fw-bold my-1">{{ total_tasks }}</h3>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card p-3">
+            <span class="text-muted small fw-semibold">Completed Tasks</span>
+            <h3 class="fw-bold my-1 text-success">{{ done_tasks }}</h3>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card p-3">
+            <span class="text-muted small fw-semibold">Completion Rate</span>
+            <h3 class="fw-bold my-1 text-primary">{{ completion_rate }}%</h3>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card p-3">
+            <span class="text-muted small fw-semibold">Team Members</span>
+            <h3 class="fw-bold my-1">{{ memberships.count }}</h3>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left: Project Tasks -->
+    <div class="col-12 col-lg-8">
+        <div class="card shadow-sm border-0 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">Project Tasks</h5>
+                <a href="{% url 'tasks:list' %}?project={{ project.id }}" class="small text-primary text-decoration-none fw-semibold">View All ({{ total_tasks }})</a>
+            </div>
+
+            {% if recent_tasks %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light text-muted small text-uppercase">
+                            <tr>
+                                <th>Task</th>
+                                <th>Status</th>
+                                <th>Priority</th>
+                                <th>Assignee</th>
+                                <th>Due Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in recent_tasks %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ task.get_absolute_url }}" class="fw-semibold text-dark text-decoration-none">
+                                            {{ task.title }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="badge {{ task.status_badge_class }} small">{{ task.get_status_display }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge {{ task.priority_badge_class }} small">{{ task.get_priority_display }}</span>
+                                    </td>
+                                    <td>
+                                        {% if task.assignee %}
+                                            <span class="small">{{ task.assignee.profile.display_name }}</span>
+                                        {% else %}
+                                            <span class="text-muted small">Unassigned</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="small {% if task.is_overdue %}text-danger fw-bold{% else %}text-muted{% endif %}">
+                                            {{ task.due_date|date:"M d, Y"|default:"-" }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5 text-muted">
+                    <p class="mb-2">No tasks in this project yet.</p>
+                    <a href="{% url 'tasks:create' %}?project={{ project.id }}" class="btn btn-sm btn-primary">Create First Task</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Right: Members Management -->
+    <div class="col-12 col-lg-4">
+        <div class="card shadow-sm border-0 p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">Project Members</h5>
+                <span class="badge bg-secondary-subtle text-secondary">{{ memberships.count }}</span>
+            </div>
+
+            <ul class="list-group list-group-flush mb-3">
+                {% for member in memberships %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <img src="{{ member.user.profile.avatar_url }}" alt="{{ member.user.username }}" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;">
+                            <div>
+                                <div class="fw-semibold small text-dark">{{ member.user.profile.display_name }}</div>
+                                <span class="badge bg-light text-secondary border small">{{ member.get_role_display }}</span>
+                            </div>
+                        </div>
+
+                        {% if can_edit and member.user != project.owner %}
+                            <form method="post" action="{% url 'projects:member_remove' project.pk member.pk %}" onsubmit="return confirm('Remove {{ member.user.username }} from project?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-link text-danger p-0" title="Remove member">
+                                    <i class="bi bi-x-circle"></i>
+                                </button>
+                            </form>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+
+            {% if can_edit %}
+                <hr class="my-2">
+                <h6 class="fw-bold small mt-2 mb-2">Invite New Member</h6>
+                <form method="post" action="{% url 'projects:member_add' project.pk %}">
+                    {% csrf_token %}
+                    <div class="mb-2">
+                        <input type="text" name="username_or_email" class="form-control form-control-sm" placeholder="Username or email address" required>
+                    </div>
+                    <div class="mb-3">
+                        <select name="role" class="form-select form-select-sm">
+                            <option value="member">Member (Can edit tasks)</option>
+                            <option value="admin">Project Admin (Full control)</option>
+                            <option value="viewer">Viewer (Read-only)</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-outline-primary w-100">
+                        <i class="bi bi-person-plus me-1"></i> Add Member
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

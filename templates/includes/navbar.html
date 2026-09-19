@@ -1,0 +1,66 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm py-2 px-3 border-bottom border-secondary-subtle">
+    <div class="container-fluid">
+        <a class="navbar-brand d-flex align-items-center gap-2 fw-bold" href="{% url 'dashboard:index' %}">
+            <div class="brand-icon bg-primary text-white rounded d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                <i class="bi bi-check2-square fs-5"></i>
+            </div>
+            <span class="fs-5 tracking-tight">Smart<span class="text-primary">Tasks</span></span>
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarMain">
+            <!-- Search bar -->
+            <form class="d-flex mx-auto col-12 col-lg-5 my-2 my-lg-0" method="get" action="{% url 'tasks:list' %}">
+                <div class="input-group input-group-sm w-100">
+                    <span class="input-group-text bg-dark-subtle border-secondary text-secondary"><i class="bi bi-search"></i></span>
+                    <input class="form-control bg-dark text-white border-secondary placeholder-secondary" type="search" name="q" placeholder="Search tasks, descriptions..." aria-label="Search">
+                </div>
+            </form>
+
+            <ul class="navbar-nav ms-auto align-items-center gap-2">
+                <!-- Action Buttons -->
+                <li class="nav-item">
+                    <a href="{% url 'tasks:create' %}" class="btn btn-sm btn-primary d-flex align-items-center gap-1 shadow-sm">
+                        <i class="bi bi-plus-circle"></i> <span>New Task</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'projects:create' %}" class="btn btn-sm btn-outline-light d-flex align-items-center gap-1">
+                        <i class="bi bi-folder-plus"></i> <span class="d-none d-md-inline">New Project</span>
+                    </a>
+                </li>
+
+                <!-- User Dropdown -->
+                <li class="nav-item dropdown ms-2">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 text-white" href="#" id="userMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <img src="{{ user.profile.avatar_url }}" alt="{{ user.username }}" class="rounded-circle border border-primary" style="width: 32px; height: 32px; object-fit: cover;">
+                        <span class="d-none d-lg-inline fw-semibold small">{{ user.profile.display_name }}</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2" aria-labelledby="userMenu">
+                        <li class="px-3 py-2 border-bottom">
+                            <p class="mb-0 fw-bold small text-dark">{{ user.profile.display_name }}</p>
+                            <span class="text-muted text-truncate d-block small">{{ user.email|default:user.username }}</span>
+                            {% if user.profile.job_title %}
+                                <span class="badge bg-primary-subtle text-primary mt-1">{{ user.profile.job_title }}</span>
+                            {% endif %}
+                        </li>
+                        <li><a class="dropdown-item py-2" href="{% url 'accounts:profile' %}"><i class="bi bi-person me-2 text-primary"></i> Profile Settings</a></li>
+                        {% if user.is_staff %}
+                            <li><a class="dropdown-item py-2" href="/admin/" target="_blank"><i class="bi bi-shield-lock me-2 text-warning"></i> Django Admin</a></li>
+                        {% endif %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form method="post" action="{% url 'accounts:logout' %}">
+                                {% csrf_token %}
+                                <button type="submit" class="dropdown-item py-2 text-danger"><i class="bi bi-box-arrow-right me-2"></i> Log out</button>
+                            </form>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>

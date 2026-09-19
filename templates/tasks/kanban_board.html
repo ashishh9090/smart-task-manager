@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Kanban Board — Smart Task Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <h2 class="fw-bold mb-1">Interactive Kanban Board</h2>
+        <p class="text-muted mb-0">Drag and drop cards across columns or use status controls to update progress in real time.</p>
+    </div>
+
+    <div class="d-flex align-items-center gap-3">
+        <!-- Project Switcher -->
+        <form method="get" class="d-flex align-items-center gap-2">
+            <label class="small fw-semibold text-muted text-nowrap">Filter Project:</label>
+            <select name="project" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">All Accessible Projects</option>
+                {% for p in projects %}
+                    <option value="{{ p.id }}" {% if selected_project_id == p.id %}selected{% endif %}>{{ p.title }}</option>
+                {% endfor %}
+            </select>
+        </form>
+
+        <a href="{% url 'tasks:create' %}{% if selected_project_id %}?project={{ selected_project_id }}{% endif %}" class="btn btn-primary btn-sm d-flex align-items-center gap-1 shadow-sm">
+            <i class="bi bi-plus-lg"></i> Add Card
+        </a>
+    </div>
+</div>
+
+<!-- 4 Kanban Columns -->
+<div class="kanban-board">
+    <!-- 1. To Do -->
+    <div class="kanban-column" id="col-todo">
+        <div class="kanban-column-header d-flex justify-content-between align-items-center bg-light">
+            <div class="d-flex align-items-center gap-2">
+                <span class="rounded-circle bg-secondary" style="width: 10px; height: 10px;"></span>
+                <span>To Do</span>
+            </div>
+            <span class="badge bg-secondary rounded-pill" id="count-todo">{{ columns.todo.count }}</span>
+        </div>
+        <div class="kanban-column-body" data-status="todo">
+            {% for task in columns.todo %}
+                {% include "tasks/includes/kanban_card.html" with task=task %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 2. In Progress -->
+    <div class="kanban-column" id="col-in_progress">
+        <div class="kanban-column-header d-flex justify-content-between align-items-center bg-light">
+            <div class="d-flex align-items-center gap-2">
+                <span class="rounded-circle bg-primary" style="width: 10px; height: 10px;"></span>
+                <span>In Progress</span>
+            </div>
+            <span class="badge bg-primary rounded-pill" id="count-in_progress">{{ columns.in_progress.count }}</span>
+        </div>
+        <div class="kanban-column-body" data-status="in_progress">
+            {% for task in columns.in_progress %}
+                {% include "tasks/includes/kanban_card.html" with task=task %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 3. In Review -->
+    <div class="kanban-column" id="col-review">
+        <div class="kanban-column-header d-flex justify-content-between align-items-center bg-light">
+            <div class="d-flex align-items-center gap-2">
+                <span class="rounded-circle bg-warning" style="width: 10px; height: 10px;"></span>
+                <span>In Review</span>
+            </div>
+            <span class="badge bg-warning text-dark rounded-pill" id="count-review">{{ columns.review.count }}</span>
+        </div>
+        <div class="kanban-column-body" data-status="review">
+            {% for task in columns.review %}
+                {% include "tasks/includes/kanban_card.html" with task=task %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 4. Done -->
+    <div class="kanban-column" id="col-done">
+        <div class="kanban-column-header d-flex justify-content-between align-items-center bg-light">
+            <div class="d-flex align-items-center gap-2">
+                <span class="rounded-circle bg-success" style="width: 10px; height: 10px;"></span>
+                <span>Done</span>
+            </div>
+            <span class="badge bg-success rounded-pill" id="count-done">{{ columns.done.count }}</span>
+        </div>
+        <div class="kanban-column-body" data-status="done">
+            {% for task in columns.done %}
+                {% include "tasks/includes/kanban_card.html" with task=task %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/kanban.js"></script>
+{% endblock %}

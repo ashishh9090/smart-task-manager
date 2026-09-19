@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Projects — Smart Task Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <h2 class="fw-bold mb-1">Projects Directory</h2>
+        <p class="text-muted mb-0">Organize collaborative workspaces, assign roles, and track delivery progress.</p>
+    </div>
+    <div>
+        <a href="{% url 'projects:create' %}" class="btn btn-primary d-flex align-items-center gap-2 shadow-sm">
+            <i class="bi bi-folder-plus"></i> Create Project
+        </a>
+    </div>
+</div>
+
+<!-- Filters Bar -->
+<div class="card shadow-sm border-0 mb-4 p-3 bg-white">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <!-- Status Tabs -->
+        <div class="btn-group" role="group">
+            <a href="{% url 'projects:list' %}?status=active{% if search_query %}&q={{ search_query }}{% endif %}" class="btn btn-sm {% if current_status == 'active' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Active</a>
+            <a href="{% url 'projects:list' %}?status=archived{% if search_query %}&q={{ search_query }}{% endif %}" class="btn btn-sm {% if current_status == 'archived' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Archived</a>
+            <a href="{% url 'projects:list' %}?status=all{% if search_query %}&q={{ search_query }}{% endif %}" class="btn btn-sm {% if current_status == 'all' %}btn-primary{% else %}btn-outline-secondary{% endif %}">All</a>
+        </div>
+
+        <!-- Search input -->
+        <form method="get" class="d-flex gap-2">
+            {% if current_status %}<input type="hidden" name="status" value="{{ current_status }}">{% endif %}
+            <div class="input-group input-group-sm">
+                <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="Search projects...">
+                <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+            </div>
+            {% if search_query %}
+                <a href="{% url 'projects:list' %}?status={{ current_status }}" class="btn btn-sm btn-light border text-muted">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<!-- Projects Cards Grid -->
+{% if projects %}
+    <div class="row g-4">
+        {% for project in projects %}
+            <div class="col-12 col-md-6 col-xl-4">
+                <div class="card shadow-sm border-0 h-100 p-4 position-relative">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="rounded-circle" style="width: 14px; height: 14px; background-color: {{ project.color }};"></span>
+                            <h5 class="fw-bold mb-0">
+                                <a href="{{ project.get_absolute_url }}" class="text-dark text-decoration-none">{{ project.title }}</a>
+                            </h5>
+                        </div>
+                        <span class="badge {% if project.status == 'active' %}bg-success-subtle text-success{% else %}bg-secondary-subtle text-secondary{% endif %} small text-capitalize">
+                            {{ project.status }}
+                        </span>
+                    </div>
+
+                    <p class="text-secondary small flex-grow-1 mb-3">
+                        {{ project.description|truncatewords:20|default:"No description provided." }}
+                    </p>
+
+                    <!-- Metrics -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between small text-muted mb-1">
+                            <span>Tasks Progress</span>
+                            <span class="fw-semibold">{{ project.completed_task_count }}/{{ project.task_count }} Done</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar" role="progressbar" style="width: {% if project.task_count > 0 %}{% widthratio project.completed_task_count project.task_count 100 %}{% else %}0{% endif %}%; background-color: {{ project.color }};"></div>
+                        </div>
+                    </div>
+
+                    <!-- Footer Details -->
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                        <div class="d-flex align-items-center gap-1">
+                            <img src="{{ project.owner.profile.avatar_url }}" alt="{{ project.owner.username }}" class="rounded-circle" style="width: 24px; height: 24px;" title="Owner: {{ project.owner.profile.display_name }}">
+                            <span class="small text-muted ms-1">{{ project.memberships.count }} members</span>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'tasks:kanban' %}?project={{ project.id }}" class="btn btn-sm btn-outline-primary" title="Open Kanban">
+                                <i class="bi bi-kanban"></i>
+                            </a>
+                            <a href="{{ project.get_absolute_url }}" class="btn btn-sm btn-primary">
+                                Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="text-center py-5 bg-white rounded-3 shadow-sm p-5">
+        <i class="bi bi-folder-x fs-1 text-muted mb-2 d-block"></i>
+        <h5 class="fw-bold">No Projects Found</h5>
+        <p class="text-muted">You have no {{ current_status }} projects matching your criteria.</p>
+        <a href="{% url 'projects:create' %}" class="btn btn-primary btn-sm mt-2">
+            <i class="bi bi-plus-lg me-1"></i> Create Your First Project
+        </a>
+    </div>
+{% endif %}
+{% endblock %}

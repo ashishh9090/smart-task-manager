@@ -1,0 +1,66 @@
+<div class="kanban-card" id="task-card-{{ task.id }}" data-task-id="{{ task.id }}" data-status="{{ task.status }}">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="badge text-white small" style="background-color: {{ task.project.color }}; font-size: 0.7rem;">
+            {{ task.project.title }}
+        </span>
+        <span class="badge {{ task.priority_badge_class }} small" style="font-size: 0.7rem;">
+            {{ task.get_priority_display }}
+        </span>
+    </div>
+
+    <h6 class="fw-bold mb-2">
+        <a href="{{ task.get_absolute_url }}" class="text-dark text-decoration-none">
+            {{ task.title }}
+        </a>
+    </h6>
+
+    {% if task.tags.exists %}
+        <div class="d-flex flex-wrap gap-1 mb-2">
+            {% for tag in task.tags.all %}
+                <span class="badge" style="background-color: {{ tag.color }}; font-size: 0.65rem;">{{ tag.name }}</span>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="d-flex justify-content-between align-items-center pt-2 border-top mt-2">
+        <!-- Due date indicator -->
+        <div>
+            {% if task.due_date %}
+                {% if task.is_overdue %}
+                    <span class="text-danger small fw-bold" title="Overdue!"><i class="bi bi-exclamation-circle me-1"></i>{{ task.due_date|date:"M d" }}</span>
+                {% elif task.is_due_soon %}
+                    <span class="text-warning-emphasis small fw-bold" title="Due within 24 hours"><i class="bi bi-clock me-1"></i>{{ task.due_date|date:"H:i" }}</span>
+                {% else %}
+                    <span class="text-muted small"><i class="bi bi-calendar3 me-1"></i>{{ task.due_date|date:"M d" }}</span>
+                {% endif %}
+            {% else %}
+                <span class="text-muted small" style="font-size: 0.7rem;">No due date</span>
+            {% endif %}
+        </div>
+
+        <!-- Assignee Avatar -->
+        <div>
+            {% if task.assignee %}
+                <img src="{{ task.assignee.profile.avatar_url }}" alt="{{ task.assignee.username }}" class="rounded-circle shadow-xs" style="width: 26px; height: 26px; object-fit: cover;" title="{{ task.assignee.profile.display_name }}">
+            {% else %}
+                <span class="badge bg-light text-muted border small" style="font-size: 0.65rem;">Unassigned</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Mobile quick movement buttons -->
+    <div class="d-flex justify-content-between align-items-center mt-2 pt-1 border-top border-light d-md-none">
+        <div class="btn-group btn-group-sm w-100">
+            {% if task.status != 'todo' %}
+                <button type="button" class="btn btn-xs btn-outline-secondary btn-quick-move" data-task-id="{{ task.id }}" data-target-status="{% if task.status == 'done' %}review{% elif task.status == 'review' %}in_progress{% else %}todo{% endif %}">
+                    &larr; Prev
+                </button>
+            {% endif %}
+            {% if task.status != 'done' %}
+                <button type="button" class="btn btn-xs btn-outline-primary btn-quick-move" data-task-id="{{ task.id }}" data-target-status="{% if task.status == 'todo' %}in_progress{% elif task.status == 'in_progress' %}review{% else %}done{% endif %}">
+                    Next &rarr;
+                </button>
+            {% endif %}
+        </div>
+    </div>
+</div>

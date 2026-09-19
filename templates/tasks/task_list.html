@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Tasks List — Smart Task Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <h2 class="fw-bold mb-1">Tasks Directory</h2>
+        <p class="text-muted mb-0">Search, filter, and track actionable tasks across all your accessible projects.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'tasks:kanban' %}" class="btn btn-outline-primary d-flex align-items-center gap-2 shadow-sm">
+            <i class="bi bi-kanban"></i> Kanban View
+        </a>
+        <a href="{% url 'tasks:create' %}" class="btn btn-primary d-flex align-items-center gap-2 shadow-sm">
+            <i class="bi bi-plus-lg"></i> New Task
+        </a>
+    </div>
+</div>
+
+<!-- Search & Filter Controls -->
+<div class="card shadow-sm border-0 mb-4 p-3 bg-white">
+    <form method="get" class="row g-2 align-items-center">
+        <!-- Search -->
+        <div class="col-12 col-md-4">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-light text-muted"><i class="bi bi-search"></i></span>
+                <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="Search title or description...">
+            </div>
+        </div>
+
+        <!-- Project Filter -->
+        <div class="col-6 col-md-2">
+            <select name="project" class="form-select form-select-sm">
+                <option value="">All Projects</option>
+                {% for p in projects %}
+                    <option value="{{ p.id }}" {% if selected_project == p.id|stringformat:"s" %}selected{% endif %}>{{ p.title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Status Filter -->
+        <div class="col-6 col-md-2">
+            <select name="status" class="form-select form-select-sm">
+                <option value="">All Statuses</option>
+                <option value="todo" {% if selected_status == 'todo' %}selected{% endif %}>To Do</option>
+                <option value="in_progress" {% if selected_status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                <option value="review" {% if selected_status == 'review' %}selected{% endif %}>In Review</option>
+                <option value="done" {% if selected_status == 'done' %}selected{% endif %}>Done</option>
+            </select>
+        </div>
+
+        <!-- Priority Filter -->
+        <div class="col-6 col-md-2">
+            <select name="priority" class="form-select form-select-sm">
+                <option value="">All Priorities</option>
+                <option value="urgent" {% if selected_priority == 'urgent' %}selected{% endif %}>Urgent</option>
+                <option value="high" {% if selected_priority == 'high' %}selected{% endif %}>High</option>
+                <option value="medium" {% if selected_priority == 'medium' %}selected{% endif %}>Medium</option>
+                <option value="low" {% if selected_priority == 'low' %}selected{% endif %}>Low</option>
+            </select>
+        </div>
+
+        <!-- Tag Filter -->
+        <div class="col-6 col-md-2">
+            <select name="tag" class="form-select form-select-sm">
+                <option value="">All Tags</option>
+                {% for tag in tags %}
+                    <option value="{{ tag.id }}" {% if selected_tag == tag.id|stringformat:"s" %}selected{% endif %}>{{ tag.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Actions / Overdue Toggle -->
+        <div class="col-12 d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+            <div class="form-check form-switch small">
+                <input class="form-check-input" type="checkbox" name="overdue" value="1" id="filterOverdue" {% if selected_overdue == '1' %}checked{% endif %} onchange="this.form.submit()">
+                <label class="form-check-label text-danger fw-semibold" for="filterOverdue">
+                    <i class="bi bi-exclamation-circle me-1"></i> Show Overdue Tasks Only
+                </label>
+            </div>
+            <div class="d-flex gap-2">
+                {% if search_query or selected_project or selected_status or selected_priority or selected_tag or selected_assignee or selected_overdue %}
+                    <a href="{% url 'tasks:list' %}" class="btn btn-sm btn-light border text-muted">Reset Filters</a>
+                {% endif %}
+                <button type="submit" class="btn btn-sm btn-primary px-3"><i class="bi bi-funnel me-1"></i> Apply</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Task Table -->
+<div class="card shadow-sm border-0 p-0 overflow-hidden bg-white">
+    {% if tasks %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-muted small text-uppercase">
+                    <tr>
+                        <th style="width: 35%;">Task Title</th>
+                        <th>Project</th>
+                        <th>Status</th>
+                        <th>Priority</th>
+                        <th>Due Date</th>
+                        <th>Assignee</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in tasks %}
+                        <tr>
+                            <td>
+                                <a href="{{ task.get_absolute_url }}" class="fw-bold text-dark text-decoration-none d-block">
+                                    {{ task.title }}
+                                </a>
+                                <div class="d-flex flex-wrap gap-1 mt-1">
+                                    {% for tag in task.tags.all %}
+                                        <span class="badge" style="background-color: {{ tag.color }}; font-size: 0.68rem;">{{ tag.name }}</span>
+                                    {% endfor %}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge text-white" style="background-color: {{ task.project.color }};">
+                                    {{ task.project.title }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge {{ task.status_badge_class }}">{{ task.get_status_display }}</span>
+                            </td>
+                            <td>
+                                <span class="badge {{ task.priority_badge_class }}">{{ task.get_priority_display }}</span>
+                            </td>
+                            <td>
+                                {% if task.is_overdue %}
+                                    <span class="badge bg-danger text-white"><i class="bi bi-exclamation-triangle me-1"></i>Overdue</span>
+                                    <div class="small text-danger fw-semibold">{{ task.due_date|date:"M d, Y" }}</div>
+                                {% elif task.is_due_soon %}
+                                    <span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>Due Soon</span>
+                                    <div class="small text-warning-emphasis fw-semibold">{{ task.due_date|date:"M d, H:i" }}</div>
+                                {% else %}
+                                    <span class="small text-muted">{{ task.due_date|date:"M d, Y"|default:"-" }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if task.assignee %}
+                                    <div class="d-flex align-items-center gap-1">
+                                        <img src="{{ task.assignee.profile.avatar_url }}" alt="{{ task.assignee.username }}" class="rounded-circle" style="width: 24px; height: 24px;" title="{{ task.assignee.profile.display_name }}">
+                                        <span class="small">{{ task.assignee.username }}</span>
+                                    </div>
+                                {% else %}
+                                    <span class="small text-muted fst-italic">Unassigned</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ task.get_absolute_url }}" class="btn btn-outline-secondary" title="View details"><i class="bi bi-eye"></i></a>
+                                    <a href="{% url 'tasks:edit' task.pk %}" class="btn btn-outline-secondary" title="Edit task"><i class="bi bi-pencil"></i></a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% include "includes/pagination.html" %}
+    {% else %}
+        <div class="text-center py-5 text-muted p-5">
+            <i class="bi bi-search fs-1 text-secondary mb-2 d-block"></i>
+            <h5 class="fw-bold">No Tasks Matched</h5>
+            <p class="text-muted">Try adjusting your filters or search query.</p>
+            <a href="{% url 'tasks:create' %}" class="btn btn-sm btn-primary">Create New Task</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

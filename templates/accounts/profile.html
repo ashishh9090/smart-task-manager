@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}User Profile — Smart Task Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">Account & Profile Settings</h2>
+        <p class="text-muted mb-0">Manage your personal information, notification preferences, and workspace identity.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: User Card Preview -->
+    <div class="col-12 col-md-4">
+        <div class="card shadow-sm border-0 text-center p-4">
+            <img src="{{ profile.avatar_url }}" alt="{{ profile.display_name }}" class="rounded-circle border border-3 border-primary mx-auto mb-3 shadow-sm" style="width: 110px; height: 110px; object-fit: cover;">
+            <h4 class="fw-bold mb-1">{{ profile.display_name }}</h4>
+            <p class="text-muted small mb-2">@{{ user.username }}</p>
+            {% if profile.job_title %}
+                <span class="badge bg-primary-subtle text-primary mb-2 px-3 py-2 fs-7">{{ profile.job_title }}</span>
+            {% endif %}
+            {% if profile.department %}
+                <p class="text-secondary small mb-3"><i class="bi bi-building me-1"></i> {{ profile.department }}</p>
+            {% endif %}
+            <hr class="my-3">
+            <p class="small text-muted text-start mb-0">{{ profile.bio|default:"No bio provided yet." }}</p>
+        </div>
+    </div>
+
+    <!-- Right Column: Edit Profile Form -->
+    <div class="col-12 col-md-8">
+        <div class="card shadow-sm border-0 p-4">
+            <h5 class="fw-bold mb-3 border-bottom pb-2">Edit Information</h5>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">First Name</label>
+                        {{ user_form.first_name }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Last Name</label>
+                        {{ user_form.last_name }}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Email Address</label>
+                    {{ user_form.email }}
+                    {% if user_form.email.errors %}
+                        <div class="text-danger small mt-1">{{ user_form.email.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Job Title</label>
+                        {{ profile_form.job_title }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Department</label>
+                        {{ profile_form.department }}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Bio</label>
+                    {{ profile_form.bio }}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Avatar Image</label>
+                    {{ profile_form.avatar }}
+                    <div class="form-text small">Upload custom profile photo (PNG, JPG).</div>
+                </div>
+
+                <div class="mb-4 form-check bg-light p-3 rounded">
+                    <div class="ms-2">
+                        {{ profile_form.email_notifications }}
+                        <label class="form-check-label fw-semibold small" for="{{ profile_form.email_notifications.id_for_label }}">
+                            Enable Task Deadline Reminders
+                        </label>
+                        <p class="text-muted small mb-0">Receive email alerts for tasks assigned to you that are due within 24 hours.</p>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary px-4 fw-semibold shadow-sm">
+                    <i class="bi bi-check2 me-1"></i> Save Changes
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
